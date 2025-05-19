@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-Pesa Payment</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #00a651;
+            --secondary-color: #e42c28;
+            --accent-color: #009fd9;
+            --light-bg: #f8f9fa;
+            --white: #ffffff;
+            --dark-text: #333;
+            --gray-text: #6c757d;
+            --border-color: #dee2e6;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+            color: var(--dark-text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .payment-container {
+            background-color: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            max-width: 100%;
+            overflow: hidden;
+        }
+        
+        .payment-header {
+            background-color: var(--primary-color);
+            color: var(--white);
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .payment-logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .payment-logo img {
+            height: 40px;
+        }
+        
+        .payment-header h1 {
+            font-size: 1.8rem;
+            margin: 0;
+            font-weight: 600;
+        }
+        
+        .payment-header p {
+            margin-top: 5px;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .payment-body {
+            padding: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark-text);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            outline: none;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.2);
+        }
+        
+        .form-hint {
+            font-size: 0.8rem;
+            color: var(--gray-text);
+            margin-top: 5px;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+        
+        .btn-primary:hover {
+            background-color: #008c43;
+        }
+        
+        .btn-primary:disabled {
+            background-color: #7dd6a8;
+            cursor: not-allowed;
+        }
+        
+        .btn-icon {
+            margin-right: 8px;
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--white);
+            animation: spin 1s ease infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-container {
+            background-color: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 400px;
+            padding: 30px;
+            text-align: center;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+        
+        .modal-overlay.active .modal-container {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .modal-icon {
+            font-size: 50px;
+            margin-bottom: 20px;
+        }
+        
+        .modal-icon.success {
+            color: var(--success-color);
+        }
+        
+        .modal-icon.error {
+            color: var(--error-color);
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--dark-text);
+        }
+        
+        .modal-message {
+            margin-bottom: 25px;
+            color: var(--gray-text);
+        }
+        
+        .btn-modal {
+            padding: 10px 25px;
+            width: auto;
+            display: inline-block;
+        }
+        
+        /* Confetti Animation */
+        .confetti-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1001;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            opacity: 0;
+        }
+        
+        /* Status Alert */
+        .status-alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            display: none;
+        }
+        
+        .status-alert.success {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .status-alert.error {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: var(--error-color);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .status-alert.active {
+            display: flex;
+        }
+        
+        .status-alert-icon {
+            margin-right: 10px;
+            font-size: 1.1rem;
+        }
+        
+        /* Phone waiting animation */
+        .phone-animation {
+            margin: 30px auto;
+            position: relative;
+            width: 80px;
+            height: 140px;
+            border: 3px solid #333;
+            border-radius: 15px;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .phone-animation.active {
+            display: block;
+        }
+        
+        .phone-screen {
+            position: absolute;
+            top: 10px;
+            left: 8px;
+            right: 8px;
+            bottom: 10px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .phone-notification {
+            position: absolute;
+            top: 10px;
+            left: 5px;
+            right: 5px;
+            height: 40px;
+            background-color: #00a651;
+            border-radius: 5px;
+            transform: translateY(-60px);
+            animation: notificationDrop 2s infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 8px;
+            font-weight: bold;
+            text-align: center;
+            padding: 5px;
+        }
+        
+        @keyframes notificationDrop {
+            0%, 100% {
+                transform: translateY(-60px);
+            }
+            20%, 80% {
+                transform: translateY(10px);
+            }
+        }
+        
+        /* Phone home button */
+        .phone-button {
+            position: absolute;
+            bottom: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="payment-container">
+        <div class="payment-header">
+            <div class="payment-logo">
+                <div style="color: white; font-size: 24px; font-weight: bold;">M-PESA</div>
+            </div>
+            <h1>Make Payment</h1>
+            <p>Fast, secure, and convenient</p>
+        </div>
+        
+        <div class="payment-body">
+            <div id="status-alert" class="status-alert">
+                <i id="status-alert-icon" class="status-alert-icon"></i>
+                <span id="status-alert-text"></span>
+            </div>
+            
+            <div id="payment-form">
+                <div class="form-group">
+                    <label class="form-label" for="phone">Phone Number</label>
+                    <input type="tel" class="form-control" id="phone" placeholder="e.g., 0712345678 or 254712345678">
+                    <div class="form-hint">Enter your Safaricom M-Pesa registered number</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="amount">Amount (KSh)</label>
+                    <input type="number" class="form-control" id="amount" placeholder="Enter amount" min="1">
+                </div>
+                
+                <button id="pay-button" class="btn btn-primary">
+                    <i class="fa-solid fa-money-bill-wave btn-icon"></i>Pay Now
+                </button>
+            </div>
+            
+            <div id="phone-animation" class="phone-animation">
+                <div class="phone-screen">
+                    <div class="phone-notification">M-PESA STK PUSH</div>
+                </div>
+                <div class="phone-button"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Success Modal -->
+    <div id="success-modal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="confetti-container" id="confetti-container"></div>
+            <div class="modal-icon success">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h2 class="modal-title">Payment Successful!</h2>
+            <p class="modal-message">Your payment has been processed successfully. Thank you for using our service.</p>
+            <button id="success-close" class="btn btn-primary btn-modal">Close</button>
+        </div>
+    </div>
+    
+    <!-- Error Modal -->
+    <div id="error-modal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-icon error">
+                <i class="fa-solid fa-circle-xmark"></i>
+            </div>
+            <h2 class="modal-title">Payment Failed</h2>
+            <p id="error-message" class="modal-message">Your payment could not be processed. Please try again.</p>
+            <button id="error-close" class="btn btn-primary btn-modal">Try Again</button>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const payButton = document.getElementById('pay-button');
+            const paymentForm = document.getElementById('payment-form');
+            const phoneAnimation = document.getElementById('phone-animation');
+            const statusAlert = document.getElementById('status-alert');
+            const statusAlertIcon = document.getElementById('status-alert-icon');
+            const statusAlertText = document.getElementById('status-alert-text');
+            const successModal = document.getElementById('success-modal');
+            const errorModal = document.getElementById('error-modal');
+            const errorMessage = document.getElementById('error-message');
+            const successCloseBtn = document.getElementById('success-close');
+            const errorCloseBtn = document.getElementById('error-close');
+            const confettiContainer = document.getElementById('confetti-container');
+            
+            // Event Listeners
+            payButton.addEventListener('click', initiatePayment);
+            successCloseBtn.addEventListener('click', closeSuccessModal);
+            errorCloseBtn.addEventListener('click', closeErrorModal);
+            
+            // Format phone number on input
+            const phoneInput = document.getElementById('phone');
+            phoneInput.addEventListener('input', function() {
+                // Remove any non-digit characters
+                this.value = this.value.replace(/\D/g, '');
+            });
+            
+            async function initiatePayment() {
+                const phoneNumber = document.getElementById('phone').value;
+                const amount = document.getElementById('amount').value;
+                
+                // Clear previous alerts
+                hideAlert();
+                
+                if (!phoneNumber || !amount) {
+                    showAlert('Please fill in all fields', 'error');
+                    return;
+                }
+                
+                // Format phone number to standard format (254...)
+                const formattedPhone = formatPhoneNumber(phoneNumber);
+                
+                // Basic validation
+                if (!formattedPhone) {
+                    showAlert('Invalid phone number format', 'error');
+                    return;
+                }
+                
+                if (parseInt(amount) < 1) {
+                    showAlert('Amount must be at least 1 KSh', 'error');
+                    return;
+                }
+                
+                // Show loading state
+                setLoadingState(true);
+                
+                try {
+                    const response = await fetch('/api/stk-push', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            phoneNumber: formattedPhone,
+                            amount: parseInt(amount)
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    // Hide loading animation
+                    setLoadingState(false);
+                    
+                    if (response.ok) {
+                        showSuccessModal();
+                    } else {
+                        const errorMsg = data.message || 'Transaction failed. Please try again.';
+                        showErrorModal(errorMsg);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    setLoadingState(false);
+                    showErrorModal('Network error. Please check your connection and try again.');
+                }
+            }
+            
+            function formatPhoneNumber(phone) {
+                // Remove all non-digits
+                let cleaned = phone.replace(/\D/g, '');
+                
+                // Remove leading 0 if present
+                if (cleaned.startsWith('0')) {
+                    cleaned = cleaned.substring(1);
+                }
+                
+                // Add country code if not present
+                if (!cleaned.startsWith('254')) {
+                    cleaned = '254' + cleaned;
+                }
+                
+                // Basic validation for Kenya phone numbers
+                if (cleaned.length !== 12 || !cleaned.startsWith('254')) {
+                    return null;
+                }
+                
+                return cleaned;
+            }
+            
+            function setLoadingState(isLoading) {
+                if (isLoading) {
+                    payButton.disabled = true;
+                    payButton.innerHTML = '<span class="spinner"></span> Processing...';
+                    paymentForm.style.display = 'none';
+                    phoneAnimation.classList.add('active');
+                } else {
+                    payButton.disabled = false;
+                    payButton.innerHTML = '<i class="fa-solid fa-money-bill-wave btn-icon"></i>Pay Now';
+                    paymentForm.style.display = 'block';
+                    phoneAnimation.classList.remove('active');
+                }
+            }
+            
+            function showAlert(message, type) {
+                statusAlert.className = `status-alert ${type} active`;
+                statusAlertText.textContent = message;
+                
+                if (type === 'success') {
+                    statusAlertIcon.className = 'status-alert-icon fa-solid fa-check-circle';
+                } else {
+                    statusAlertIcon.className = 'status-alert-icon fa-solid fa-exclamation-circle';
+                }
+                
+                // Auto-hide success alerts after 5 seconds
+                if (type === 'success') {
+                    setTimeout(hideAlert, 5000);
+                }
+            }
+            
+            function hideAlert() {
+                statusAlert.classList.remove('active');
+            }
+            
+            function showSuccessModal() {
+                successModal.classList.add('active');
+                createConfetti();
+            }
+            
+            function closeSuccessModal() {
+                successModal.classList.remove('active');
+                // Reset form for new payment
+                document.getElementById('phone').value = '';
+                document.getElementById('amount').value = '';
+            }
+            
+            function showErrorModal(message) {
+                errorMessage.textContent = message;
+                errorModal.classList.add('active');
+            }
+            
+            function closeErrorModal() {
+                errorModal.classList.remove('active');
+            }
+            
+            // Confetti animation
+            function createConfetti() {
+                confettiContainer.innerHTML = '';
+                const colors = ['#00a651', '#e42c28', '#009fd9', '#ffcd00', '#ff8c00', '#9c27b0'];
+                const shapes = ['circle', 'square', 'triangle'];
+                
+                for (let i = 0; i < 100; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    const shape = shapes[Math.floor(Math.random() * shapes.length)];
+                    const size = Math.random() * 10 + 5;
+                    
+                    confetti.style.background = color;
+                    confetti.style.width = `${size}px`;
+                    confetti.style.height = `${size}px`;
+                    confetti.style.left = `${Math.random() * 100}%`;
+                    
+                    // Set shape
+                    if (shape === 'circle') {
+                        confetti.style.borderRadius = '50%';
+                    } else if (shape === 'triangle') {
+                        confetti.style.width = '0';
+                        confetti.style.height = '0';
+                        confetti.style.borderLeft = `${size}px solid transparent`;
+                        confetti.style.borderRight = `${size}px solid transparent`;
+                        confetti.style.borderBottom = `${size * 1.5}px solid ${color}`;
+                        confetti.style.background = 'transparent';
+                    }
+                    
+                    // Animation properties
+                    const duration = Math.random() * 3 + 2;
+                    const delay = Math.random();
+                    
+                    confetti.style.animation = `
+                        fall ${duration}s ease-in ${delay}s 1 forwards,
+                        sway ${duration * 0.5}s ease-in-out ${delay}s infinite alternate
+                    `;
+                    
+                    confetti.style.opacity = '1';
+                    confetti.style.transform = 'translateY(-100px)';
+                    
+                    confettiContainer.appendChild(confetti);
+                }
+                
+                // Add keyframe animations dynamically
+                const style = document.createElement('style');
+                style.textContent = `
+                    @keyframes fall {
+                        to {
+                            transform: translateY(${window.innerHeight}px);
+                            opacity: 0;
+                        }
+                    }
+                    
+                    @keyframes sway {
+                        from {
+                            transform: translateX(-20px) rotate(-45deg);
+                        }
+                        to {
+                            transform: translateX(20px) rotate(45deg);
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        });
+    </script>
+</body>
+</html>
